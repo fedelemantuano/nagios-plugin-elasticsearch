@@ -76,6 +76,14 @@ def parser_command_line():
     )
 
     parser.add_argument(
+        '-D',
+        '--perf-data',
+        action='store_true',
+        help='Enable Nagios performance data (Valid for all checks groups)',
+        dest='perf_data',
+    )
+
+    parser.add_argument(
         '-v',
         '--version',
         action='version',
@@ -107,11 +115,18 @@ def parser_command_line():
     return parser.parse_args()
 
 
-def check_cluster_health(result):
+def check_cluster_health(result, perf_data=None):
     critical = 'red'
     warning = 'yellow'
     ok = 'green'
     message = 'The cluster health status is {}'.format(result)
+    if perf_data:
+        lookup = {
+            'green': 2,
+            'yellow': 1,
+            'red': 0,
+        }
+        message += " | cluster_status={}".format(lookup[result])
     check_status(
         result,
         message,
@@ -121,10 +136,17 @@ def check_cluster_health(result):
     )
 
 
-def check_heap_used_percent(result, critical=None, warning=None):
+def check_heap_used_percent(
+    result,
+    perf_data=None,
+    critical=None,
+    warning=None
+):
     critical = critical or 90
     warning = warning or 75
-    message = 'The Heap used percent is {}'.format(result)
+    message = 'The Heap used percent is {}%'.format(result)
+    if perf_data:
+        message += " | heap_used_percent={}".format(result)
     check_status(
         result,
         message,
@@ -143,7 +165,10 @@ if __name__ == '__main__':
 
         if args.cluster_health:
             result = getAPI(API_CLUSTER_HEALTH)
-            check_cluster_health(result['status'])
+            check_cluster_health(
+                result['status'],
+                args.perf_data,
+            )
 
     if args.subparser_name == 'node':
         API_NODES_STATS = 'http://{}:9200/_nodes/{}/stats'.format(
@@ -155,5 +180,6 @@ if __name__ == '__main__':
             result = getAPI(API_NODES_STATS)
             node = result["nodes"].values()[0]
             check_heap_used_percent(
-                node['jvm']['mem']['heap_used_percent']
+                node['jvm']['mem']['heap_used_percent'],
+                args.perf_data,
             )
