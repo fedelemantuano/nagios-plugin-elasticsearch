@@ -23,7 +23,18 @@ def is_number(x):
     return isinstance(x, (int, long, float, complex))
 
 
-def check_status(value, message, critical, warning, ok=None):
+def check_status(
+    value,
+    message,
+    only_graph=False,
+    critical=None,
+    warning=None,
+    ok=None,
+):
+    if only_graph:
+        print("{}".format(message))
+        sys.exit(0)
+
     if (is_number(value) and is_number(critical) and is_number(warning)):
         if value >= critical:
             print("CRITICAL - {}".format(message))
@@ -84,6 +95,14 @@ def parser_command_line():
     )
 
     parser.add_argument(
+        '-G',
+        '--only-graph',
+        action='store_true',
+        help='Enable Nagios to print only message',
+        dest='only_graph',
+    )
+
+    parser.add_argument(
         '-v',
         '--version',
         action='version',
@@ -115,7 +134,11 @@ def parser_command_line():
     return parser.parse_args()
 
 
-def check_cluster_health(result, perf_data=None):
+def check_cluster_health(
+    result,
+    perf_data=None,
+    only_graph=False
+):
     critical = 'red'
     warning = 'yellow'
     ok = 'green'
@@ -130,6 +153,7 @@ def check_cluster_health(result, perf_data=None):
     check_status(
         result,
         message,
+        only_graph,
         critical,
         warning,
         ok,
@@ -139,8 +163,9 @@ def check_cluster_health(result, perf_data=None):
 def check_heap_used_percent(
     result,
     perf_data=None,
+    only_graph=False,
     critical=None,
-    warning=None
+    warning=None,
 ):
     critical = critical or 90
     warning = warning or 75
@@ -150,6 +175,7 @@ def check_heap_used_percent(
     check_status(
         result,
         message,
+        only_graph,
         critical,
         warning,
     )
@@ -168,6 +194,7 @@ if __name__ == '__main__':
             check_cluster_health(
                 result['status'],
                 args.perf_data,
+                args.only_graph,
             )
 
     if args.subparser_name == 'node':
@@ -182,4 +209,5 @@ if __name__ == '__main__':
             check_heap_used_percent(
                 node['jvm']['mem']['heap_used_percent'],
                 args.perf_data,
+                args.only_graph,
             )
