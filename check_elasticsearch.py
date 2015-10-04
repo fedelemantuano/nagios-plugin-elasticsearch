@@ -7,7 +7,7 @@ import sys
 import urllib2
 
 
-VERSION = 0.2
+VERSION = 0.5
 
 
 def getAPI(url):
@@ -138,7 +138,7 @@ def parser_command_line():
     node.add_argument(
         '--ratio-search-query-time',
         action='store_true',
-        help='Ratio search query_total/query_time_in_millis',
+        help='Ratio search query_time_in_millis/query_total',
     )
 
     return parser.parse_args()

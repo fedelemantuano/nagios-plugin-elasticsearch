@@ -48,3 +48,54 @@ define service {
 </code></pre>
 
 ![Heap used percent](https://github.com/fedelemantuano/nagios-plugin-elasticsearch/blob/develop/images/heap_used_percent.png)
+
+## Help
+
+### check_elasticsearch.py
+
+```
+check_elasticsearch.py [-h] [-n NODE_NAME] [-c CLIENT_NODE] [-D] [-G]
+                              [-v]
+                              {cluster,node} ...
+
+Elasticsearch Nagios checks
+
+positional arguments:
+  {cluster,node}        All Elasticsearch checks groups
+    cluster             All Cluster checks
+    node                All Node checks
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -n NODE_NAME, --node-name NODE_NAME
+                        Node name in the Cluster
+  -c CLIENT_NODE, --client-node CLIENT_NODE
+                        Client node name (FQDN) for HTTP communication
+  -D, --perf-data       Enable Nagios performance data (Valid for all checks
+                        groups)
+  -G, --only-graph      Enable Nagios to print only message
+  -v, --version         show program's version number and exit
+```
+
+### check_elasticsearch.py cluster
+```
+check_elasticsearch.py cluster [-h] [--cluster-health]
+
+optional arguments:
+  -h, --help        show this help message and exit
+  --cluster-health  Check the Cluster health (green, yellow, red)
+```
+
+### check_elasticsearch.py node
+```
+check_elasticsearch.py node [-h] [--heap-used-percent]                                                     
+                                   [--documents-count]
+                                   [--ratio-search-query-time]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --heap-used-percent   Check the Heap used percent
+  --documents-count     Documents on node
+  --ratio-search-query-time
+                        Ratio search query_time_in_millis/query_total
+```
