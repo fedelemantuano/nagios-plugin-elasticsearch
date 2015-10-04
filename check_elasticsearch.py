@@ -130,6 +130,16 @@ def parser_command_line():
         action='store_true',
         help='Check the Heap used percent',
     )
+    node.add_argument(
+        '--documents-count',
+        action='store_true',
+        help='Documents on node',
+    )
+    node.add_argument(
+        '--ratio-search-query-time',
+        action='store_true',
+        help='Ratio search query_total/query_time_in_millis',
+    )
 
     return parser.parse_args()
 
@@ -181,6 +191,48 @@ def check_heap_used_percent(
     )
 
 
+def check_documents_count(
+    result,
+    perf_data=None,
+    only_graph=False,
+    critical=None,
+    warning=None,
+):
+    critical = critical or 0
+    warning = warning or 0
+    message = 'The documents count is {}'.format(result)
+    if perf_data:
+        message += " | documents_count={}".format(result)
+    check_status(
+        result,
+        message,
+        only_graph,
+        critical,
+        warning,
+    )
+
+
+def check_ratio_search_query_time(
+    result,
+    perf_data=None,
+    only_graph=False,
+    critical=None,
+    warning=None,
+):
+    critical = critical or 0
+    warning = warning or 0
+    message = 'The ratio query_time_in_millis/query_total is {}'.format(result)
+    if perf_data:
+        message += " | ratio_search_query_time={}".format(result)
+    check_status(
+        result,
+        message,
+        only_graph,
+        critical,
+        warning,
+    )
+
+
 if __name__ == '__main__':
     args = parser_command_line()
 
@@ -208,6 +260,34 @@ if __name__ == '__main__':
             node = result["nodes"].values()[0]
             check_heap_used_percent(
                 node['jvm']['mem']['heap_used_percent'],
+                args.perf_data,
+                args.only_graph,
+            )
+
+        if args.documents_count:
+            result = getAPI(API_NODES_STATS)
+            node = result["nodes"].values()[0]
+            check_documents_count(
+                node['indices']['docs']['count'],
+                args.perf_data,
+                args.only_graph,
+            )
+
+        if args.ratio_search_query_time:
+            result = getAPI(API_NODES_STATS)
+            node = result["nodes"].values()[0]
+            query_time_in_millis = float(
+                node['indices']['search']['query_time_in_millis']
+            )
+            query_total = float(
+                node['indices']['search']['query_total']
+            )
+            ratio = round(
+                query_time_in_millis/query_total,
+                2
+            )
+            check_ratio_search_query_time(
+                ratio,
                 args.perf_data,
                 args.only_graph,
             )
