@@ -141,6 +141,22 @@ def parser_command_line():
         help='Ratio search query_time_in_millis/query_total',
     )
 
+    # Indices Checks
+    indices = subparsers.add_parser(
+        'indices',
+        help='All indices checks',
+    )
+    indices.add_argument(
+        '--index',
+        default=None,
+        help='Index name',
+    )
+    indices.add_argument(
+        '--prefix',
+        default=None,
+        help='Include only indices beginning with prefix',
+    )
+
     return parser.parse_args()
 
 
@@ -231,6 +247,36 @@ def check_ratio_search_query_time(
         critical,
         warning,
     )
+
+
+def check_last_entry(
+    result,
+    perf_data=None,
+    only_graph=False,
+    critical=None,
+    warning=None,
+):
+    critical = critical or 600
+    warning = warning or 300
+    message = 'Last entry {} seconds ago'.format(result)
+    if perf_data:
+        message += " | seconds={}".format(result)
+    check_status(
+        result,
+        message,
+        only_graph,
+        critical,
+        warning,
+    )
+
+
+def get_indices(url):
+    indices_dict = getAPI(url)
+    return sorted(indices_dict.keys())
+
+
+def get_last_index(indices):
+    return indices[-1]
 
 
 if __name__ == '__main__':
