@@ -5,9 +5,15 @@ import argparse
 import json
 import sys
 import urllib2
+from datetime import datetime
+try:
+    from elasticsearch import Elasticsearch
+except ImportError:
+    print("Unable to import elasticsearch")
+    sys.exit(1)
 
 
-VERSION = 0.5
+VERSION = 1.0
 
 
 def getAPI(url):
@@ -156,6 +162,16 @@ def parser_command_line():
         default=None,
         help='Include only indices beginning with prefix',
     )
+    indices.add_argument(
+        '--doc-type',
+        default=None,
+        help='Include only documents with doc-type',
+    )
+    indices.add_argument(
+        '--last-entry',
+        action='store_true',
+        help='Check last entry in the index. Only for timestamp in UTC',
+    )
 
     return parser.parse_args()
 
@@ -256,8 +272,8 @@ def check_last_entry(
     critical=None,
     warning=None,
 ):
-    critical = critical or 600
-    warning = warning or 300
+    critical = critical or 120
+    warning = warning or 60
     message = 'Last entry {} seconds ago'.format(result)
     if perf_data:
         message += " | seconds={}".format(result)
@@ -275,8 +291,20 @@ def get_indices(url):
     return sorted(indices_dict.keys())
 
 
-def get_last_index(indices):
-    return indices[-1]
+def get_last_timestamp(index, es, doc_type=None):
+    r = es.search(
+        index=index,
+        doc_type=doc_type,
+        _source=False,
+        explain=False,
+        fields="@timestamp",
+        size=1,
+        sort="@timestamp:desc",
+    )
+    return datetime.strptime(
+        r["hits"]["hits"][0]["fields"]["@timestamp"][0].split(".")[0],
+        "%Y-%m-%dT%H:%M:%S"
+    )
 
 
 if __name__ == '__main__':
@@ -334,6 +362,38 @@ if __name__ == '__main__':
             )
             check_ratio_search_query_time(
                 ratio,
+                args.perf_data,
+                args.only_graph,
+            )
+
+    if args.subparser_name == 'indices':
+        es = Elasticsearch(host=args.client_node)
+
+        if args.last_entry:
+            API_ALIASES = 'http://{}:9200/{}/_alias'
+
+            if args.index:
+                pattern = args.index
+            elif args.prefix:
+                pattern = args.prefix + "*"
+            else:
+                print("Invalid index name or prefix")
+                sys.exit(1)
+
+            index = get_indices(
+                API_ALIASES.format(
+                    args.client_node,
+                    pattern,
+                )
+            )[-1]
+            last_timestamp = get_last_timestamp(
+                index=index,
+                es=es,
+                doc_type=args.doc_type
+            )
+            timedelta = (datetime.utcnow() - last_timestamp).seconds
+            check_last_entry(
+                timedelta,
                 args.perf_data,
                 args.only_graph,
             )

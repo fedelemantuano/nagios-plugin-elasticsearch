@@ -56,14 +56,16 @@ define service {
 ```
 check_elasticsearch.py [-h] [-n NODE_NAME] [-c CLIENT_NODE] [-D] [-G]
                               [-v]
-                              {cluster,node} ...
+                              {cluster,node,indices} ...
 
 Elasticsearch Nagios checks
 
 positional arguments:
-  {cluster,node}        All Elasticsearch checks groups
+  {cluster,node,indices}
+                        All Elasticsearch checks groups
     cluster             All Cluster checks
     node                All Node checks
+    indices             All indices checks
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -98,4 +100,18 @@ optional arguments:
   --documents-count     Documents on node
   --ratio-search-query-time
                         Ratio search query_time_in_millis/query_total
+```
+
+### check_elasticsearch.py indices
+```
+check_elasticsearch.py indices [-h] [--index INDEX] [--prefix PREFIX]
+                                      [--doc-type DOC_TYPE] [--last-entry]
+
+optional arguments:
+  -h, --help           show this help message and exit
+  --index INDEX        Index name
+  --prefix PREFIX      Include only indices beginning with prefix
+  --doc-type DOC_TYPE  Include only documents with doc-type
+  --last-entry         Check last entry in the index. Only for timestamp in
+                       UTC
 ```
